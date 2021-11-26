@@ -32,7 +32,7 @@ type GameMapTileType =
 	| 'WOOD';
 
 class GameMap {
-	private tileImage: any;
+	private tileImage: p5.Image;
 	private tileSize = 64;
 
 	private map: Record<number, Record<number, GameMapTileType>> = {
