@@ -1,11 +1,20 @@
+let gameMap: GameMap;
+
+function preload() {}
+
 function setup() {
-	createCanvas(1200, 800);
+	createCanvas(1216, 836);
+	gameMap = new GameMap();
+	gameMap.preload();
+
+	gameMap.setup();
 }
 
 function draw() {
-	background(200);
+	noSmooth();
 
-	createSprite(width / 2, height - 50, 100, 10);
+	gameMap.drawBackground();
+	gameMap.drawObjects();
 
-	translate(width / 2, height / 2);
+	// drawSprites();
 }

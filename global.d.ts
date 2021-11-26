@@ -6,4 +6,6 @@ export as namespace p5;
 
 declare global {
 	var createSprite: any;
+	var loadSpriteSheet: any;
+	var drawSprites: any;
 }
