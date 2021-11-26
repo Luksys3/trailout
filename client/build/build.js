@@ -1,5 +1,6 @@
 let gameMap;
 let player;
+const socket = io('http://localhost:8443');
 function preload() {
     gameMap = new GameMap();
     gameMap.preload();
@@ -11,6 +12,7 @@ function setup() {
     createCanvas(1216, 836);
     gameMap.setup();
     player.setup();
+    socket.emit('message', 'HELLO WORLD');
 }
 function draw() {
     player.update();
