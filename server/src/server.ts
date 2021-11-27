@@ -1,4 +1,5 @@
 import * as express from 'express';
+import { Game } from './classes/Game';
 
 const SOCKETS_PORT = 8443;
 
@@ -12,14 +13,8 @@ let io = require('socket.io')(http, {
 	}
 });
 
-io.on('connection', function (socket: any) {
-	console.log('a user connected');
-
-	socket.on('message', function (message: any) {
-		console.log(message);
-	});
-});
-
 http.listen(SOCKETS_PORT, function () {
 	console.log('listening on *:' + SOCKETS_PORT);
 });
+
+new Game(io);

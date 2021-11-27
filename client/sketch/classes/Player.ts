@@ -1,14 +1,12 @@
 class Player {
-	private carsImage: p5.Image;
+	id: string;
 
-	private width = 22;
-	private height = 38;
+	private me: boolean;
 
+	position: p5.Vector;
 	private velocity: p5.Vector;
-	private position: p5.Vector;
 
-	private slippery = 24;
-
+	angle = 0;
 	private rotation = 0;
 	private rotationAcceleration = 1;
 	private rotationDeceleration = 0.8;
@@ -17,9 +15,26 @@ class Player {
 	private turnRight = false;
 	private turnLeft = false;
 
-	constructor() {
-		this.position = createVector(64 * 8, 64 * 5);
+	private carsImage: p5.Image;
+	private carStyle: 0 | 1 | 2 | 3;
 
+	private width = 22;
+	private height = 38;
+
+	private slippery = 24;
+
+	constructor(
+		id: string,
+		carStyle: 0 | 1 | 2 | 3,
+		position: p5.Vector,
+		{ me }: { me: boolean }
+	) {
+		this.id = id;
+		this.carStyle = carStyle;
+		this.me = me;
+
+		this.position = position;
+		// this.velocity = createVector(0, 0);
 		this.velocity = createVector(0, 14);
 	}
 
@@ -27,7 +42,10 @@ class Player {
 		this.carsImage = loadImage('assets/Cars.png');
 	}
 
-	setup() {}
+	updateFromServer(data: ServerPlayer) {
+		this.position = createVector(data.position.x, data.position.y);
+		this.angle = data.angle;
+	}
 
 	update() {
 		this.position.add(this.velocity.copy().mult(deltaTime / 50));
@@ -60,18 +78,23 @@ class Player {
 			this.position.x + this.width / 2,
 			this.position.y + this.height / 1.5
 		);
-		const deltaAngle = -this.velocity.angleBetween(createVector(0, -1));
-		rotate(
-			deltaAngle +
+
+		if (this.me) {
+			const deltaAngle = -this.velocity.angleBetween(createVector(0, -1));
+			this.angle =
+				deltaAngle +
 				(PI / 180) *
 					(this.rotation > 0
 						? this.slippery
 						: this.rotation < 0
 						? -this.slippery
 						: 0) *
-					map(abs(this.rotation), 0, this.maxRotation, 0, 1)
-		);
-		image(this.carsImage, 0, 0, 22, 38, 0, 46, 11, 19);
+					map(abs(this.rotation), 0, this.maxRotation, 0, 1);
+		}
+		rotate(this.angle);
+
+		const coords = this.getCarStyleCoords();
+		image(this.carsImage, 0, 0, 22, 38, coords[0], coords[1], 11, 19);
 
 		pop();
 	}
@@ -90,5 +113,14 @@ class Player {
 		} else if (keyCode === RIGHT_ARROW) {
 			this.turnRight = false;
 		}
+	}
+
+	private getCarStyleCoords(): [number, number] {
+		return {
+			0: [0, 46],
+			1: [26, 25],
+			2: [10, -1],
+			3: [53, 45]
+		}[this.carStyle] as [number, number];
 	}
 }

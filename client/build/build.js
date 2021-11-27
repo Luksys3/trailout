@@ -1,35 +1,93 @@
+let game;
 let gameMap;
-let player;
-const socket = io('http://localhost:8443');
 function preload() {
+    game = new Game();
+    game.preload();
     gameMap = new GameMap();
     gameMap.preload();
-    player = new Player();
-    player.preload();
 }
 function setup() {
     frameRate(60);
     createCanvas(1216, 836);
+    game.setup();
     gameMap.setup();
-    player.setup();
-    socket.emit('message', 'HELLO WORLD');
 }
 function draw() {
-    player.update();
+    game.updatePlayers();
     background(255);
     noSmooth();
     gameMap.drawBackground();
-    player.draw();
+    game.drawPlayers();
     gameMap.drawObjects();
     text(Math.round(frameRate()), 10, 10);
 }
 function keyPressed() {
-    player.onKeyPressed(keyCode);
-    return false;
+    game.onKeyPressed(keyCode);
 }
 function keyReleased() {
-    player.onKeyReleased(keyCode);
-    return false;
+    game.onKeyReleased(keyCode);
+}
+class Game {
+    constructor() {
+        this.players = {};
+    }
+    preload() {
+        this.socket = io('http://localhost:8443');
+    }
+    setup() {
+        this.socket.on('players', (message) => {
+            message.players.map((player, index) => {
+                if (this.players[player.id] === undefined) {
+                    const newPlayer = new Player(player.id, player.carStyle, createVector(player.position.x, player.position.y), { me: this.socket.id === player.id });
+                    newPlayer.preload();
+                    this.players[newPlayer.id] = newPlayer;
+                    return;
+                }
+                if (this.socket.id !== player.id) {
+                    this.players[player.id].updateFromServer(player);
+                }
+            });
+        });
+        this.socket.on('remove-player', (message) => {
+            delete this.players[message.playerId];
+        });
+    }
+    updatePlayers() {
+        this.useMePlayer(mePlayer => {
+            mePlayer.update();
+            this.socket.emit('player-update', {
+                position: { x: mePlayer.position.x, y: mePlayer.position.y },
+                angle: mePlayer.angle
+            });
+        });
+    }
+    onKeyPressed(keyCode) {
+        this.useMePlayer(mePlayer => {
+            mePlayer.onKeyPressed(keyCode);
+        });
+    }
+    onKeyReleased(keyCode) {
+        this.useMePlayer(mePlayer => {
+            mePlayer.onKeyReleased(keyCode);
+        });
+    }
+    drawPlayers() {
+        Object.values(this.players).forEach(player => {
+            player.draw();
+        });
+    }
+    onNewPlayers() { }
+    useMePlayer(callback) {
+        var _a;
+        if (!this.socket.connected) {
+            return;
+        }
+        const mePlayer = (_a = this.players[this.socket.id]) !== null && _a !== void 0 ? _a : null;
+        if (mePlayer === null) {
+            return;
+        }
+        callback(mePlayer);
+    }
 }
 class GameMap {
     constructor() {
@@ -279,23 +337,30 @@ class GameMap {
     }
 }
 class Player {
-    constructor() {
-        this.width = 22;
-        this.height = 38;
-        this.slippery = 24;
+    constructor(id, carStyle, position, { me }) {
+        this.angle = 0;
         this.rotation = 0;
         this.rotationAcceleration = 1;
         this.rotationDeceleration = 0.8;
         this.maxRotation = 10;
         this.turnRight = false;
         this.turnLeft = false;
-        this.position = createVector(64 * 8, 64 * 5);
+        this.width = 22;
+        this.height = 38;
+        this.slippery = 24;
+        this.id = id;
+        this.carStyle = carStyle;
+        this.me = me;
+        this.position = position;
         this.velocity = createVector(0, 14);
     }
     preload() {
         this.carsImage = loadImage('assets/Cars.png');
     }
-    setup() { }
+    updateFromServer(data) {
+        this.position = createVector(data.position.x, data.position.y);
+        this.angle = data.angle;
+    }
     update() {
         this.position.add(this.velocity.copy().mult(deltaTime / 50));
         if (this.turnLeft) {
@@ -322,16 +387,21 @@ class Player {
     draw() {
         push();
         translate(this.position.x + this.width / 2, this.position.y + this.height / 1.5);
-        const deltaAngle = -this.velocity.angleBetween(createVector(0, -1));
-        rotate(deltaAngle +
-            (PI / 180) *
-                (this.rotation > 0
-                    ? this.slippery
-                    : this.rotation < 0
-                        ? -this.slippery
-                        : 0) *
-                map(abs(this.rotation), 0, this.maxRotation, 0, 1));
-        image(this.carsImage, 0, 0, 22, 38, 0, 46, 11, 19);
+        if (this.me) {
+            const deltaAngle = -this.velocity.angleBetween(createVector(0, -1));
+            this.angle =
+                deltaAngle +
+                    (PI / 180) *
+                        (this.rotation > 0
+                            ? this.slippery
+                            : this.rotation < 0
+                                ? -this.slippery
+                                : 0) *
+                        map(abs(this.rotation), 0, this.maxRotation, 0, 1);
+        }
+        rotate(this.angle);
+        const coords = this.getCarStyleCoords();
+        image(this.carsImage, 0, 0, 22, 38, coords[0], coords[1], 11, 19);
         pop();
     }
     onKeyPressed(keyCode) {
@@ -349,6 +419,14 @@ class Player {
         else if (keyCode === RIGHT_ARROW) {
             this.turnRight = false;
         }
+    }
+    getCarStyleCoords() {
+        return {
+            0: [0, 46],
+            1: [26, 25],
+            2: [10, -1],
+            3: [53, 45]
+        }[this.carStyle];
     }
 }
 //# sourceMappingURL=build.js.map

@@ -1,35 +1,37 @@
+let game: Game;
 let gameMap: GameMap;
-let player: Player;
-
-const socket = io('http://localhost:8443');
+// let player: Player;
 
 function preload() {
+	game = new Game();
+	game.preload();
+
 	gameMap = new GameMap();
 	gameMap.preload();
 
-	player = new Player();
-	player.preload();
+	// player = new Player(3);
+	// player.preload();
 }
 
 function setup() {
 	frameRate(60);
 	createCanvas(1216, 836);
 
+	game.setup();
 	gameMap.setup();
-	player.setup();
-
-	socket.emit('message', 'HELLO WORLD');
 }
 
 function draw() {
-	player.update();
+	// player.update();
+	game.updatePlayers();
 
 	background(255);
 
 	noSmooth();
 	gameMap.drawBackground();
 
-	player.draw();
+	// player.draw();
+	game.drawPlayers();
 
 	gameMap.drawObjects();
 
@@ -37,11 +39,13 @@ function draw() {
 }
 
 function keyPressed() {
-	player.onKeyPressed(keyCode);
-	return false;
+	// player.onKeyPressed(keyCode);
+	game.onKeyPressed(keyCode);
+	// return false;
 }
 
 function keyReleased() {
-	player.onKeyReleased(keyCode);
-	return false;
+	// player.onKeyReleased(keyCode);
+	game.onKeyReleased(keyCode);
+	// return false;
 }
