@@ -27,15 +27,17 @@ class Player {
 		id: string,
 		carStyle: 0 | 1 | 2 | 3,
 		position: p5.Vector,
-		{ me }: { me: boolean }
+		{ me, angle }: { me: boolean; angle: number }
 	) {
 		this.id = id;
 		this.carStyle = carStyle;
 		this.me = me;
+		this.angle = angle;
 
 		this.position = position;
 		// this.velocity = createVector(0, 0);
 		this.velocity = createVector(0, 14);
+		this.velocity.rotate(this.angle);
 	}
 
 	preload() {

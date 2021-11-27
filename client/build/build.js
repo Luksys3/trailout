@@ -8,17 +8,17 @@ function preload() {
 }
 function setup() {
     frameRate(60);
-    createCanvas(1216, 836);
+    createCanvas(1216, 832);
     game.setup();
     gameMap.setup();
 }
 function draw() {
-    game.updatePlayers();
-    background(255);
     noSmooth();
+    game.updatePlayers();
     gameMap.drawBackground();
     game.drawPlayers();
     gameMap.drawObjects();
+    game.drawUi();
     text(Math.round(frameRate()), 10, 10);
 }
 function keyPressed() {
@@ -30,15 +30,31 @@ function keyReleased() {
 class Game {
     constructor() {
         this.players = {};
+        this.state = null;
+        this.playersCount = 0;
+        this.countdown = 5;
     }
-    preload() {
-        this.socket = io('http://localhost:8443');
-    }
+    preload() { }
     setup() {
+        this.socket = io('http://localhost:8443');
+        this.socket.on('game-state', (message) => {
+            switch (message.state) {
+                case 'WAITING_FOR_PLAYERS':
+                    this.playersCount = message.playersCount;
+                    this.players = {};
+                    break;
+                case 'COUNTDOWN':
+                case 'ENDED':
+                    this.countdown = message.countdown;
+                    this.players = {};
+                    break;
+            }
+            this.state = message.state;
+        });
         this.socket.on('players', (message) => {
             message.players.map((player, index) => {
                 if (this.players[player.id] === undefined) {
-                    const newPlayer = new Player(player.id, player.carStyle, createVector(player.position.x, player.position.y), { me: this.socket.id === player.id });
+                    const newPlayer = new Player(player.id, player.carStyle, createVector(player.position.x, player.position.y), { me: this.socket.id === player.id, angle: player.angle });
                     newPlayer.preload();
                     this.players[newPlayer.id] = newPlayer;
                     return;
@@ -75,6 +91,20 @@ class Game {
         Object.values(this.players).forEach(player => {
             player.draw();
         });
+    }
+    drawUi() {
+        push();
+        textSize(26);
+        if (this.state === 'WAITING_FOR_PLAYERS') {
+            text(`Connected players: ${this.playersCount}`, width / 2, height / 2);
+        }
+        if (this.state === 'COUNTDOWN') {
+            text(`Game starts in ${this.countdown}!`, width / 2, height / 2);
+        }
+        if (this.state === 'ENDED') {
+            text(`Game ended! Restarting in ${this.countdown} seconds.`, width / 2, height / 2);
+        }
+        pop();
     }
     onNewPlayers() { }
     useMePlayer(callback) {
@@ -235,9 +265,9 @@ class GameMap {
             }
         };
         this.objects = {
-            4: {
-                8: 'TREE_TOP',
-                9: 'TREE_BOTTOM'
+            2: {
+                7: 'TREE_TOP',
+                8: 'TREE_BOTTOM'
             },
             6: {
                 1: 'WOOD'
@@ -252,14 +282,14 @@ class GameMap {
             9: {
                 5: 'STONE'
             },
+            11: {
+                2: 'TREE_TOP',
+                3: 'TREE_BOTTOM'
+            },
             12: {
                 3: 'TREE_TOP',
                 4: 'TREE_COLLIDED',
                 5: 'TREE_BOTTOM'
-            },
-            13: {
-                3: 'TREE_TOP',
-                4: 'TREE_BOTTOM'
             },
             15: {
                 7: 'WOOD'
@@ -337,7 +367,7 @@ class GameMap {
     }
 }
 class Player {
-    constructor(id, carStyle, position, { me }) {
+    constructor(id, carStyle, position, { me, angle }) {
         this.angle = 0;
         this.rotation = 0;
         this.rotationAcceleration = 1;
@@ -351,8 +381,10 @@ class Player {
         this.id = id;
         this.carStyle = carStyle;
         this.me = me;
+        this.angle = angle;
         this.position = position;
         this.velocity = createVector(0, 14);
+        this.velocity.rotate(this.angle);
     }
     preload() {
         this.carsImage = loadImage('assets/Cars.png');

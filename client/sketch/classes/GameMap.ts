@@ -179,9 +179,9 @@ class GameMap {
 	};
 
 	private objects: Record<number, Record<number, GameMapTileType>> = {
-		4: {
-			8: 'TREE_TOP',
-			9: 'TREE_BOTTOM'
+		2: {
+			7: 'TREE_TOP',
+			8: 'TREE_BOTTOM'
 		},
 		6: {
 			1: 'WOOD'
@@ -196,14 +196,14 @@ class GameMap {
 		9: {
 			5: 'STONE'
 		},
+		11: {
+			2: 'TREE_TOP',
+			3: 'TREE_BOTTOM'
+		},
 		12: {
 			3: 'TREE_TOP',
 			4: 'TREE_COLLIDED',
 			5: 'TREE_BOTTOM'
-		},
-		13: {
-			3: 'TREE_TOP',
-			4: 'TREE_BOTTOM'
 		},
 		15: {
 			7: 'WOOD'
