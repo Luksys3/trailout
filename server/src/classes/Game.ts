@@ -1,5 +1,7 @@
 import { Server } from 'socket.io';
 import { Player, PlayerDataInterface } from './Player';
+import { Wall } from './Wall';
+import * as uuid from 'uuid';
 
 type GameStateType = 'WAITING_FOR_PLAYERS' | 'COUNTDOWN' | 'STARTED' | 'ENDED';
 
@@ -11,6 +13,7 @@ export class Game {
 
 	private state: GameStateType = 'WAITING_FOR_PLAYERS';
 	private players: Player[] = [];
+	private walls: Record<string, Wall> = {};
 	private countdown: number = 5;
 
 	constructor(io: Server) {
@@ -36,11 +39,35 @@ export class Game {
 			socket.on('player-update', (message: PlayerDataInterface) => {
 				if (this.state === 'STARTED') {
 					this.players.forEach(player => {
-						if (player.id === socket.id) {
+						if (player.id === socket.id && !player.dead) {
 							player.updateFromClient(message);
 						}
 					});
 				}
+			});
+
+			socket.on('new-blob', (message: { position: { x: number; y: number } }) => {
+				const id = uuid.v4();
+
+				this.walls[id] = new Wall({
+					id,
+					position: message.position,
+					ownerId: socket.id
+				});
+
+				this.io.emit('new-blob', {
+					blob: {
+						id: this.walls[id].id,
+						position: this.walls[id].position
+					}
+				});
+
+				setTimeout(() => {
+					delete this.walls[id];
+					this.io.emit('remove-wall', {
+						wallId: id
+					});
+				}, 3000);
 			});
 
 			socket.on('disconnect', () => {
@@ -72,7 +99,17 @@ export class Game {
 					) {
 						player.setDead();
 						this.io.emit('player-dead', { playerId: player.id });
+						return;
 					}
+
+					Object.values(this.walls).forEach(({ position: p }) => {
+						const a = p.x - player.position.x;
+						const b = p.y - player.position.y;
+						if (Math.sqrt(a * a + b * b) < 20) {
+							player.setDead();
+							this.io.emit('player-dead', { playerId: player.id });
+						}
+					});
 				});
 
 				const aliveCount = this.players.reduce(
@@ -88,6 +125,7 @@ export class Game {
 						player.reset();
 						return player;
 					});
+					this.walls = {};
 
 					const interval = setInterval(() => {
 						this.countdown -= 1;

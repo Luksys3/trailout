@@ -3,6 +3,7 @@ interface ServerPlayer {
 	carStyle: 0 | 1 | 2 | 3;
 	position: { x: number; y: number };
 	angle: number;
+	dead: boolean;
 }
 
 type GameStateType = 'WAITING_FOR_PLAYERS' | 'COUNTDOWN' | 'STARTED' | 'ENDED';
@@ -23,6 +24,7 @@ type GameStateData =
 class Game {
 	private socket: any;
 	private players: Record<string, Player> = {};
+	private walls: Record<string, Wall> = {};
 	private state: GameStateType | null = null;
 
 	private playersCount = 0;
@@ -38,26 +40,45 @@ class Game {
 				case 'WAITING_FOR_PLAYERS':
 					this.playersCount = message.playersCount;
 					this.players = {};
+					this.walls = {};
 					break;
 
 				case 'COUNTDOWN':
 				case 'ENDED':
 					this.countdown = message.countdown;
 					this.players = {};
+					this.walls = {};
 					break;
 			}
 
 			this.state = message.state;
 		});
 
+		this.socket.on(
+			'new-blob',
+			(message: { blob: { id: string; position: { x: number; y: number } } }) => {
+				this.walls[message.blob.id] = new Wall({
+					position: createVector(
+						message.blob.position.x,
+						message.blob.position.y
+					)
+				});
+			}
+		);
+
 		this.socket.on('players', (message: { players: ServerPlayer[] }) => {
-			message.players.map((player, index) => {
+			message.players.map(player => {
 				if (this.players[player.id] === undefined) {
 					const newPlayer = new Player(
 						player.id,
 						player.carStyle,
 						createVector(player.position.x, player.position.y),
-						{ me: this.socket.id === player.id, angle: player.angle }
+						{
+							me: this.socket.id === player.id,
+							angle: player.angle,
+							game: this,
+							dead: player.dead
+						}
 					);
 
 					newPlayer.preload();
@@ -67,12 +88,18 @@ class Game {
 
 				if (this.socket.id !== player.id) {
 					this.players[player.id].updateFromServer(player);
+				} else {
+					this.players[player.id].dead = player.dead;
 				}
 			});
 		});
 
 		this.socket.on('remove-player', (message: { playerId: ServerPlayer['id'] }) => {
 			delete this.players[message.playerId];
+		});
+
+		this.socket.on('remove-wall', (message: { wallId: string }) => {
+			delete this.walls[message.wallId];
 		});
 	}
 
@@ -85,6 +112,10 @@ class Game {
 				angle: mePlayer.angle
 			});
 		});
+	}
+
+	drawWalls() {
+		Object.values(this.walls).forEach(wall => wall.draw());
 	}
 
 	onKeyPressed(keyCode: number) {
@@ -127,6 +158,15 @@ class Game {
 	}
 
 	onNewPlayers() {}
+
+	createWall(position: p5.Vector) {
+		this.socket.emit('new-blob', {
+			position: {
+				x: position.x,
+				y: position.y
+			}
+		});
+	}
 
 	private useMePlayer(callback: (mePlayer: Player) => void) {
 		if (!this.socket.connected) {

@@ -16,6 +16,7 @@ function draw() {
     noSmooth();
     game.updatePlayers();
     gameMap.drawBackground();
+    game.drawWalls();
     game.drawPlayers();
     gameMap.drawObjects();
     game.drawUi();
@@ -30,6 +31,7 @@ function keyReleased() {
 class Game {
     constructor() {
         this.players = {};
+        this.walls = {};
         this.state = null;
         this.playersCount = 0;
         this.countdown = 5;
@@ -42,19 +44,31 @@ class Game {
                 case 'WAITING_FOR_PLAYERS':
                     this.playersCount = message.playersCount;
                     this.players = {};
+                    this.walls = {};
                     break;
                 case 'COUNTDOWN':
                 case 'ENDED':
                     this.countdown = message.countdown;
                     this.players = {};
+                    this.walls = {};
                     break;
             }
             this.state = message.state;
         });
+        this.socket.on('new-blob', (message) => {
+            this.walls[message.blob.id] = new Wall({
+                position: createVector(message.blob.position.x, message.blob.position.y)
+            });
+        });
         this.socket.on('players', (message) => {
-            message.players.map((player, index) => {
+            message.players.map(player => {
                 if (this.players[player.id] === undefined) {
-                    const newPlayer = new Player(player.id, player.carStyle, createVector(player.position.x, player.position.y), { me: this.socket.id === player.id, angle: player.angle });
+                    const newPlayer = new Player(player.id, player.carStyle, createVector(player.position.x, player.position.y), {
+                        me: this.socket.id === player.id,
+                        angle: player.angle,
+                        game: this,
+                        dead: player.dead
+                    });
                     newPlayer.preload();
                     this.players[newPlayer.id] = newPlayer;
                     return;
@@ -62,10 +76,16 @@ class Game {
                 if (this.socket.id !== player.id) {
                     this.players[player.id].updateFromServer(player);
                 }
+                else {
+                    this.players[player.id].dead = player.dead;
+                }
             });
         });
         this.socket.on('remove-player', (message) => {
             delete this.players[message.playerId];
+        });
+        this.socket.on('remove-wall', (message) => {
+            delete this.walls[message.wallId];
         });
     }
     updatePlayers() {
@@ -76,6 +96,9 @@ class Game {
                 angle: mePlayer.angle
             });
         });
+    }
+    drawWalls() {
+        Object.values(this.walls).forEach(wall => wall.draw());
     }
     onKeyPressed(keyCode) {
         this.useMePlayer(mePlayer => {
@@ -107,6 +130,14 @@ class Game {
         pop();
     }
     onNewPlayers() { }
+    createWall(position) {
+        this.socket.emit('new-blob', {
+            position: {
+                x: position.x,
+                y: position.y
+            }
+        });
+    }
     useMePlayer(callback) {
         var _a;
         if (!this.socket.connected) {
@@ -367,7 +398,7 @@ class GameMap {
     }
 }
 class Player {
-    constructor(id, carStyle, position, { me, angle }) {
+    constructor(id, carStyle, position, { me, angle, game, dead }) {
         this.angle = 0;
         this.rotation = 0;
         this.rotationAcceleration = 1;
@@ -378,10 +409,13 @@ class Player {
         this.width = 22;
         this.height = 38;
         this.slippery = 24;
+        this.dead = false;
         this.id = id;
         this.carStyle = carStyle;
         this.me = me;
         this.angle = angle;
+        this.game = game;
+        this.dead = dead;
         this.position = position;
         this.velocity = createVector(0, 14);
         this.velocity.rotate(this.angle);
@@ -392,8 +426,12 @@ class Player {
     updateFromServer(data) {
         this.position = createVector(data.position.x, data.position.y);
         this.angle = data.angle;
+        this.dead = data.dead;
     }
     update() {
+        if (this.dead) {
+            return;
+        }
         this.position.add(this.velocity.copy().mult(deltaTime / 50));
         if (this.turnLeft) {
             this.rotation -= this.rotationAcceleration;
@@ -418,7 +456,7 @@ class Player {
     }
     draw() {
         push();
-        translate(this.position.x + this.width / 2, this.position.y + this.height / 1.5);
+        translate(this.position.x, this.position.y);
         if (this.me) {
             const deltaAngle = -this.velocity.angleBetween(createVector(0, -1));
             this.angle =
@@ -433,7 +471,7 @@ class Player {
         }
         rotate(this.angle);
         const coords = this.getCarStyleCoords();
-        image(this.carsImage, 0, 0, 22, 38, coords[0], coords[1], 11, 19);
+        image(this.carsImage, -this.width / 2, -this.height / 2, this.width, this.height, coords[0], coords[1], 11, 19);
         pop();
     }
     onKeyPressed(keyCode) {
@@ -451,6 +489,12 @@ class Player {
         else if (keyCode === RIGHT_ARROW) {
             this.turnRight = false;
         }
+        else if (keyCode === 32) {
+            this.putBlob();
+        }
+    }
+    putBlob() {
+        this.game.createWall(createVector(this.position.x, this.position.y).add(createVector(0, 30).rotate(this.angle)));
     }
     getCarStyleCoords() {
         return {
@@ -459,6 +503,17 @@ class Player {
             2: [10, -1],
             3: [53, 45]
         }[this.carStyle];
+    }
+}
+class Wall {
+    constructor({ position }) {
+        this.position = position;
+    }
+    draw() {
+        push();
+        color(240, 240, 240);
+        circle(this.position.x, this.position.y, 20);
+        pop();
     }
 }
 //# sourceMappingURL=build.js.map

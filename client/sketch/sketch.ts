@@ -23,6 +23,7 @@ function draw() {
 	game.updatePlayers();
 
 	gameMap.drawBackground();
+	game.drawWalls();
 	game.drawPlayers();
 	gameMap.drawObjects();
 

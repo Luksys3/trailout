@@ -2,6 +2,7 @@ class Player {
 	id: string;
 
 	private me: boolean;
+	private game: Game;
 
 	position: p5.Vector;
 	private velocity: p5.Vector;
@@ -22,20 +23,28 @@ class Player {
 	private height = 38;
 
 	private slippery = 24;
+	dead = false;
 
 	constructor(
 		id: string,
 		carStyle: 0 | 1 | 2 | 3,
 		position: p5.Vector,
-		{ me, angle }: { me: boolean; angle: number }
+		{
+			me,
+			angle,
+			game,
+			dead
+		}: { me: boolean; angle: number; game: Game; dead: boolean }
 	) {
 		this.id = id;
 		this.carStyle = carStyle;
 		this.me = me;
 		this.angle = angle;
+		this.game = game;
+		this.dead = dead;
 
 		this.position = position;
-		// this.velocity = createVector(0, 0);
+		// this.velocity = createVector(0, 0.1);
 		this.velocity = createVector(0, 14);
 		this.velocity.rotate(this.angle);
 	}
@@ -47,9 +56,14 @@ class Player {
 	updateFromServer(data: ServerPlayer) {
 		this.position = createVector(data.position.x, data.position.y);
 		this.angle = data.angle;
+		this.dead = data.dead;
 	}
 
 	update() {
+		if (this.dead) {
+			return;
+		}
+
 		this.position.add(this.velocity.copy().mult(deltaTime / 50));
 
 		if (this.turnLeft) {
@@ -76,10 +90,7 @@ class Player {
 	draw() {
 		push();
 
-		translate(
-			this.position.x + this.width / 2,
-			this.position.y + this.height / 1.5
-		);
+		translate(this.position.x, this.position.y);
 
 		if (this.me) {
 			const deltaAngle = -this.velocity.angleBetween(createVector(0, -1));
@@ -96,7 +107,17 @@ class Player {
 		rotate(this.angle);
 
 		const coords = this.getCarStyleCoords();
-		image(this.carsImage, 0, 0, 22, 38, coords[0], coords[1], 11, 19);
+		image(
+			this.carsImage,
+			-this.width / 2,
+			-this.height / 2,
+			this.width,
+			this.height,
+			coords[0],
+			coords[1],
+			11,
+			19
+		);
 
 		pop();
 	}
@@ -114,7 +135,17 @@ class Player {
 			this.turnLeft = false;
 		} else if (keyCode === RIGHT_ARROW) {
 			this.turnRight = false;
+		} else if (keyCode === 32) {
+			this.putBlob();
 		}
+	}
+
+	private putBlob() {
+		this.game.createWall(
+			createVector(this.position.x, this.position.y).add(
+				createVector(0, 30).rotate(this.angle)
+			)
+		);
 	}
 
 	private getCarStyleCoords(): [number, number] {
