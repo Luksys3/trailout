@@ -84,7 +84,7 @@ class Game {
     }
     setup(music) {
         this.music = music;
-        this.socket = io('http://192.168.1.222:8443');
+        this.socket = io('http://localhost:8443');
         this.socket.on('game-state', (message) => {
             switch (message.state) {
                 case 'WAITING_FOR_PLAYERS':

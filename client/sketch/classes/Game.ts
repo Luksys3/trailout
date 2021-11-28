@@ -39,7 +39,7 @@ class Game {
 
 	setup(music: p5.SoundFile) {
 		this.music = music;
-		this.socket = io('http://192.168.1.222:8443');
+		this.socket = io('http://localhost:8443');
 
 		this.socket.on('game-state', (message: GameStateData) => {
 			switch (message.state) {
