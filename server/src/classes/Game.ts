@@ -62,14 +62,15 @@ export class Game {
 				new Player({ id: socket.id, carStyle: this.getUniqueCarStyle() })
 			];
 
-			if (this.state === 'WAITING_FOR_PLAYERS') {
-				console.log('Players count: ' + this.players.length);
-				if (this.players.length >= 2) {
-					this.startCountdown();
-				}
-			}
+			this.sendGameState(this.io);
 
-			this.sendGameState(socket);
+			socket.on('try-start', () => {
+				if (this.state === 'WAITING_FOR_PLAYERS') {
+					if (this.players.length >= 2) {
+						this.startCountdown();
+					}
+				}
+			});
 
 			socket.on('player-update', (message: PlayerDataInterface) => {
 				if (
@@ -202,7 +203,7 @@ export class Game {
 						});
 
 						this.state = 'ENDED';
-						this.countdown = 5;
+						this.countdown = 4;
 						this.sendGameState(this.io);
 
 						clearInterval(this.endedInterval);
@@ -232,7 +233,7 @@ export class Game {
 					}
 				}
 			}
-		}, 1000 / 50);
+		}, 1000 / 40);
 	}
 
 	private startCountdown() {

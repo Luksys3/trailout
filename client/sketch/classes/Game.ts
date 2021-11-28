@@ -163,13 +163,28 @@ class Game {
 			fill(255, 255, 255, 100);
 			rect(0, 0, 1216, 832);
 			pop();
+
+			push();
+			translate(width / 2, 0);
+			color(0, 0, 0, 160);
+			textAlign(CENTER);
+			textSize(14);
+			text('Trailout', 0, 22);
+			pop();
 		}
 
 		push();
 		textSize(20);
 		textAlign(CENTER);
 		if (this.state === 'WAITING_FOR_PLAYERS') {
-			text('Waiting for more players', width / 2, height / 2);
+			if (this.playersCount <= 1) {
+				text('Waiting for 1 more player', width / 2, height / 2);
+			} else {
+				text(`${this.playersCount} players connected`, width / 2, height / 2);
+				textSize(16);
+				text('[Start]', width / 2, height / 2 + 50);
+				textSize(20);
+			}
 		}
 
 		if (this.state === 'COUNTDOWN') {
@@ -177,13 +192,22 @@ class Game {
 		}
 
 		if (this.state === 'ENDED') {
-			text(
-				`Game ended! Restarting in ${this.countdown} seconds.`,
-				width / 2,
-				height / 2
-			);
+			text(`Restarting in ${this.countdown} sec.`, width / 2, height / 2);
 		}
 		pop();
+	}
+
+	mouseReleased() {
+		if (this.state === 'WAITING_FOR_PLAYERS' && this.playersCount > 1) {
+			if (
+				mouseX >= width / 2 - 80 &&
+				mouseX <= width / 2 + 80 &&
+				mouseY >= height / 2 + 25 &&
+				mouseY <= height / 2 + 75
+			) {
+				this.socket.emit('try-start');
+			}
+		}
 	}
 
 	onNewPlayers() {}

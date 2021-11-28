@@ -80,5 +80,7 @@ function mouseReleased() {
 			connectPressed = true;
 			setupGame();
 		}
+	} else {
+		game.mouseReleased();
 	}
 }
