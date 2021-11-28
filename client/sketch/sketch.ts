@@ -49,8 +49,12 @@ function draw() {
 		translate(width / 2, height / 2);
 		textAlign(CENTER);
 		color(0, 0, 0);
+		textSize(32);
+		text('Trailout', 0, -100);
+		textSize(16);
+		text('by Luksys3', 0, -70);
 		textSize(20);
-		text('[Connect]', 20, 0);
+		text('[Connect]', 0, 20);
 		pop();
 	}
 }
@@ -70,8 +74,8 @@ function mouseReleased() {
 		if (
 			relativeMouseX >= -100 &&
 			relativeMouseX <= 100 &&
-			relativeMouseY >= -20 &&
-			relativeMouseY <= 20
+			relativeMouseY >= 0 &&
+			relativeMouseY <= 40
 		) {
 			connectPressed = true;
 			setupGame();

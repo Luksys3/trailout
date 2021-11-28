@@ -44,6 +44,8 @@ class Game {
 		this.socket.on('game-state', (message: GameStateData) => {
 			switch (message.state) {
 				case 'WAITING_FOR_PLAYERS':
+					this.musicStarted = false;
+					this.music.stop();
 					this.playersCount = message.playersCount;
 					this.players = {};
 					this.walls = {};

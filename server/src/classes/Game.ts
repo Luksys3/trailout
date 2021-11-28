@@ -15,6 +15,41 @@ export class Game {
 	private players: Player[] = [];
 	private walls: Record<string, Wall> = {};
 	private countdown: number = 5;
+	private countdownTimeout: any = null;
+	private countdownInterval: any = null;
+	private endedInterval: any = null;
+
+	private objects: Record<number, Record<number, string>> = {
+		2: {
+			7: 'TREE_TOP',
+			8: 'TREE_BOTTOM'
+		},
+		6: {
+			1: 'WOOD'
+		},
+		7: {
+			6: 'BUSH'
+		},
+		8: {
+			1: 'TREE_TOP',
+			2: 'TREE_BOTTOM'
+		},
+		9: {
+			5: 'STONE'
+		},
+		11: {
+			2: 'TREE_TOP',
+			3: 'TREE_BOTTOM'
+		},
+		12: {
+			3: 'TREE_TOP',
+			4: 'TREE_COLLIDED',
+			5: 'TREE_BOTTOM'
+		},
+		15: {
+			7: 'WOOD'
+		}
+	};
 
 	constructor(io: Server) {
 		this.io = io;
@@ -84,6 +119,15 @@ export class Game {
 		});
 
 		setInterval(() => {
+			if (this.players.length <= 1) {
+				this.state = 'WAITING_FOR_PLAYERS';
+				this.sendGameState(this.io);
+
+				clearTimeout(this.countdownTimeout);
+				clearInterval(this.countdownInterval);
+				clearInterval(this.endedInterval);
+			}
+
 			if (
 				this.state === 'STARTED' ||
 				(this.state === 'ENDED' && this.countdown > 2)
@@ -106,6 +150,22 @@ export class Game {
 						player.setDead();
 						this.io.emit('player-dead', { playerId: player.id });
 						return;
+					}
+
+					const playerTileX = Math.floor(player.position.x / 64);
+					const playerTileY = Math.floor(player.position.y / 64);
+					const potentialObject =
+						this.objects[playerTileX]?.[playerTileY] ?? null;
+					if (potentialObject !== null) {
+						if (potentialObject !== 'TREE_TOP') {
+							const a = playerTileX * 64 + 32 - player.position.x;
+							const b = playerTileY * 64 + 32 - player.position.y;
+							if (Math.sqrt(a * a + b * b) < 32) {
+								player.setDead();
+								this.io.emit('player-dead', { playerId: player.id });
+								return;
+							}
+						}
 					}
 
 					Object.values(this.players).forEach(({ id, position: p }) => {
@@ -145,11 +205,12 @@ export class Game {
 						this.countdown = 5;
 						this.sendGameState(this.io);
 
-						const interval = setInterval(() => {
+						clearInterval(this.endedInterval);
+						this.endedInterval = setInterval(() => {
 							this.countdown -= 1;
 
 							if (this.players.length <= 1) {
-								clearInterval(interval);
+								clearInterval(this.endedInterval);
 								this.state = 'WAITING_FOR_PLAYERS';
 							} else if (this.countdown <= 0) {
 								this.players = this.players.map(player => {
@@ -162,7 +223,7 @@ export class Game {
 									players: this.players.map(player => player.toJson())
 								});
 
-								clearInterval(interval);
+								clearInterval(this.endedInterval);
 								this.state = 'STARTED';
 							}
 
@@ -171,7 +232,7 @@ export class Game {
 					}
 				}
 			}
-		}, 1000 / 60);
+		}, 1000 / 50);
 	}
 
 	private startCountdown() {
@@ -179,12 +240,14 @@ export class Game {
 		this.countdown = 6;
 		this.sendGameState(this.io);
 
-		setTimeout(() => {
-			const interval = setInterval(() => {
+		clearTimeout(this.countdownTimeout);
+		this.countdownTimeout = setTimeout(() => {
+			clearInterval(this.countdownInterval);
+			this.countdownInterval = setInterval(() => {
 				this.countdown -= 1;
 
 				if (this.countdown <= 0) {
-					clearInterval(interval);
+					clearInterval(this.countdownInterval);
 					this.state = 'STARTED';
 				}
 
