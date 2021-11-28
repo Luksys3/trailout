@@ -7,3 +7,5 @@ Created during 48 hours coding jam.
 - `[a]` or `[arrow left]` - Turn Left
 - `[d]` or `[arrow right]` - Turn Right
 - `[space]` - Drop Boulder
+
+###### Don't look at code, quality is terrible ツツ
