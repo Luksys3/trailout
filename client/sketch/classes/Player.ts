@@ -173,21 +173,30 @@ class Player {
 	}
 
 	onKeyPressed(keyCode: number) {
-		if (keyCode === LEFT_ARROW) {
+		if (keyCode === LEFT_ARROW || keyCode === 65) {
 			this.turnLeft = true;
-		} else if (keyCode === RIGHT_ARROW) {
+			return false;
+		} else if (keyCode === RIGHT_ARROW || keyCode === 68) {
 			this.turnRight = true;
+			return false;
 		}
+
+		return true;
 	}
 
 	onKeyReleased(keyCode: number) {
-		if (keyCode === LEFT_ARROW) {
+		if (keyCode === LEFT_ARROW || keyCode === 65) {
 			this.turnLeft = false;
-		} else if (keyCode === RIGHT_ARROW) {
+			return false;
+		} else if (keyCode === RIGHT_ARROW || keyCode === 68) {
 			this.turnRight = false;
+			return false;
 		} else if (keyCode === 32) {
 			this.putBlob();
+			return false;
 		}
+
+		return true;
 	}
 
 	private putBlob() {

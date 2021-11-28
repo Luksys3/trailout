@@ -139,14 +139,14 @@ class Game {
 	}
 
 	onKeyPressed(keyCode: number) {
-		this.useMePlayer(mePlayer => {
-			mePlayer.onKeyPressed(keyCode);
+		return this.useMePlayer(mePlayer => {
+			return mePlayer.onKeyPressed(keyCode);
 		});
 	}
 
 	onKeyReleased(keyCode: number) {
-		this.useMePlayer(mePlayer => {
-			mePlayer.onKeyReleased(keyCode);
+		return this.useMePlayer(mePlayer => {
+			return mePlayer.onKeyReleased(keyCode);
 		});
 	}
 
@@ -223,14 +223,14 @@ class Game {
 
 	private useMePlayer(callback: (mePlayer: Player) => void) {
 		if (!this.socket?.connected ?? true) {
-			return;
+			return true;
 		}
 
 		const mePlayer = this.players[this.socket.id] ?? null;
 		if (mePlayer === null) {
-			return;
+			return true;
 		}
 
-		callback(mePlayer);
+		return callback(mePlayer);
 	}
 }

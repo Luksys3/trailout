@@ -49,10 +49,10 @@ function draw() {
     }
 }
 function keyPressed() {
-    game.onKeyPressed(keyCode);
+    return game.onKeyPressed(keyCode);
 }
 function keyReleased() {
-    game.onKeyReleased(keyCode);
+    return game.onKeyReleased(keyCode);
 }
 function mouseReleased() {
     if (!connectPressed) {
@@ -159,13 +159,13 @@ class Game {
         Object.values(this.walls).forEach(wall => wall.draw());
     }
     onKeyPressed(keyCode) {
-        this.useMePlayer(mePlayer => {
-            mePlayer.onKeyPressed(keyCode);
+        return this.useMePlayer(mePlayer => {
+            return mePlayer.onKeyPressed(keyCode);
         });
     }
     onKeyReleased(keyCode) {
-        this.useMePlayer(mePlayer => {
-            mePlayer.onKeyReleased(keyCode);
+        return this.useMePlayer(mePlayer => {
+            return mePlayer.onKeyReleased(keyCode);
         });
     }
     drawPlayers() {
@@ -232,13 +232,13 @@ class Game {
     useMePlayer(callback) {
         var _a, _b, _c;
         if ((_b = !((_a = this.socket) === null || _a === void 0 ? void 0 : _a.connected)) !== null && _b !== void 0 ? _b : true) {
-            return;
+            return true;
         }
         const mePlayer = (_c = this.players[this.socket.id]) !== null && _c !== void 0 ? _c : null;
         if (mePlayer === null) {
-            return;
+            return true;
         }
-        callback(mePlayer);
+        return callback(mePlayer);
     }
 }
 class GameMap {
@@ -602,23 +602,30 @@ class Player {
         }
     }
     onKeyPressed(keyCode) {
-        if (keyCode === LEFT_ARROW) {
+        if (keyCode === LEFT_ARROW || keyCode === 65) {
             this.turnLeft = true;
+            return false;
         }
-        else if (keyCode === RIGHT_ARROW) {
+        else if (keyCode === RIGHT_ARROW || keyCode === 68) {
             this.turnRight = true;
+            return false;
         }
+        return true;
     }
     onKeyReleased(keyCode) {
-        if (keyCode === LEFT_ARROW) {
+        if (keyCode === LEFT_ARROW || keyCode === 65) {
             this.turnLeft = false;
+            return false;
         }
-        else if (keyCode === RIGHT_ARROW) {
+        else if (keyCode === RIGHT_ARROW || keyCode === 68) {
             this.turnRight = false;
+            return false;
         }
         else if (keyCode === 32) {
             this.putBlob();
+            return false;
         }
+        return true;
     }
     putBlob() {
         if (!this.dead) {

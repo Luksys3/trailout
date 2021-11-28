@@ -60,11 +60,11 @@ function draw() {
 }
 
 function keyPressed() {
-	game.onKeyPressed(keyCode);
+	return game.onKeyPressed(keyCode);
 }
 
 function keyReleased() {
-	game.onKeyReleased(keyCode);
+	return game.onKeyReleased(keyCode);
 }
 
 function mouseReleased() {
