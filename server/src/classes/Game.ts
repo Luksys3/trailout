@@ -24,6 +24,10 @@ export class Game {
 			7: 'TREE_TOP',
 			8: 'TREE_BOTTOM'
 		},
+		4: {
+			10: 'TREE_TOP',
+			11: 'TREE_BOTTOM'
+		},
 		6: {
 			1: 'WOOD'
 		},
@@ -37,17 +41,32 @@ export class Game {
 		9: {
 			5: 'STONE'
 		},
+		10: {
+			10: 'TREE_TOP',
+			11: 'TREE_BOTTOM'
+		},
 		11: {
 			2: 'TREE_TOP',
-			3: 'TREE_BOTTOM'
+			3: 'TREE_BOTTOM',
+			11: 'TREE_TOP',
+			12: 'TREE_BOTTOM'
 		},
 		12: {
 			3: 'TREE_TOP',
 			4: 'TREE_COLLIDED',
-			5: 'TREE_BOTTOM'
+			5: 'TREE_BOTTOM',
+			11: 'TREE_TOP',
+			12: 'TREE_BOTTOM'
+		},
+		14: {
+			2: 'STONE'
 		},
 		15: {
 			7: 'WOOD'
+		},
+		18: {
+			5: 'TREE_TOP',
+			6: 'TREE_BOTTOM'
 		}
 	};
 
