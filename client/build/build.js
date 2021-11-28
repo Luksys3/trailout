@@ -1,8 +1,11 @@
 let game;
 let gameMap;
 let font;
+let music;
+let connectPressed = false;
 function preload() {
     font = loadFont('assets/PressStart2P-Regular.ttf');
+    music = loadSound('assets/8_Bit_Retro_Funk.mp3');
     game = new Game();
     game.preload();
     gameMap = new GameMap();
@@ -12,23 +15,53 @@ function setup() {
     textFont(font);
     frameRate(60);
     createCanvas(1216, 832);
-    game.setup();
+}
+function setupGame() {
+    game.setup(music);
     gameMap.setup();
+    music.setLoop(true);
+    music.setVolume(0.6);
 }
 function draw() {
-    noSmooth();
-    game.updatePlayers();
-    gameMap.drawBackground();
-    game.drawWalls();
-    game.drawPlayers();
-    gameMap.drawObjects();
-    game.drawUi();
+    if (connectPressed) {
+        noSmooth();
+        game.updatePlayers();
+        gameMap.drawBackground();
+        game.drawWalls();
+        game.drawPlayers();
+        gameMap.drawObjects();
+        game.drawUi();
+    }
+    else {
+        push();
+        background(255);
+        strokeWeight(0);
+        translate(width / 2, height / 2);
+        textAlign(CENTER);
+        color(0, 0, 0);
+        textSize(20);
+        text('[Connect]', 20, 0);
+        pop();
+    }
 }
 function keyPressed() {
     game.onKeyPressed(keyCode);
 }
 function keyReleased() {
     game.onKeyReleased(keyCode);
+}
+function mouseReleased() {
+    if (!connectPressed) {
+        const relativeMouseX = mouseX - width / 2;
+        const relativeMouseY = mouseY - height / 2;
+        if (relativeMouseX >= -100 &&
+            relativeMouseX <= 100 &&
+            relativeMouseY >= -20 &&
+            relativeMouseY <= 20) {
+            connectPressed = true;
+            setupGame();
+        }
+    }
 }
 class Game {
     constructor() {
@@ -37,10 +70,14 @@ class Game {
         this.state = null;
         this.playersCount = 0;
         this.countdown = 5;
+        this.musicStarted = false;
     }
-    preload() { }
-    setup() {
-        this.socket = io('http://localhost:8443');
+    preload() {
+        this.crashSound = loadSound('assets/Crash.wav');
+    }
+    setup(music) {
+        this.music = music;
+        this.socket = io('http://192.168.1.222:8443');
         this.socket.on('game-state', (message) => {
             switch (message.state) {
                 case 'WAITING_FOR_PLAYERS':
@@ -56,6 +93,10 @@ class Game {
                         this.walls = {};
                     }
                     break;
+            }
+            if (message.state === 'COUNTDOWN' && !this.musicStarted) {
+                this.musicStarted = true;
+                this.music.play();
             }
             this.state = message.state;
         });
@@ -90,6 +131,10 @@ class Game {
         });
         this.socket.on('remove-wall', (message) => {
             delete this.walls[message.wallId];
+        });
+        this.socket.on('player-dead', () => {
+            this.crashSound.setVolume(0.6);
+            this.crashSound.play();
         });
     }
     updatePlayers() {
@@ -151,11 +196,11 @@ class Game {
         });
     }
     useMePlayer(callback) {
-        var _a;
-        if (!this.socket.connected) {
+        var _a, _b, _c;
+        if ((_b = !((_a = this.socket) === null || _a === void 0 ? void 0 : _a.connected)) !== null && _b !== void 0 ? _b : true) {
             return;
         }
-        const mePlayer = (_a = this.players[this.socket.id]) !== null && _a !== void 0 ? _a : null;
+        const mePlayer = (_c = this.players[this.socket.id]) !== null && _c !== void 0 ? _c : null;
         if (mePlayer === null) {
             return;
         }

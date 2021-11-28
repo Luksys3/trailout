@@ -148,7 +148,10 @@ export class Game {
 						const interval = setInterval(() => {
 							this.countdown -= 1;
 
-							if (this.countdown <= 0) {
+							if (this.players.length <= 1) {
+								clearInterval(interval);
+								this.state = 'WAITING_FOR_PLAYERS';
+							} else if (this.countdown <= 0) {
 								this.players = this.players.map(player => {
 									player.reset();
 									return player;
@@ -168,24 +171,26 @@ export class Game {
 					}
 				}
 			}
-		}, 1000 / 30);
+		}, 1000 / 60);
 	}
 
 	private startCountdown() {
 		this.state = 'COUNTDOWN';
-		this.countdown = 5;
+		this.countdown = 6;
 		this.sendGameState(this.io);
 
-		const interval = setInterval(() => {
-			this.countdown -= 1;
+		setTimeout(() => {
+			const interval = setInterval(() => {
+				this.countdown -= 1;
 
-			if (this.countdown <= 0) {
-				clearInterval(interval);
-				this.state = 'STARTED';
-			}
+				if (this.countdown <= 0) {
+					clearInterval(interval);
+					this.state = 'STARTED';
+				}
 
-			this.sendGameState(this.io);
-		}, 1000);
+				this.sendGameState(this.io);
+			}, 1000);
+		}, 500);
 	}
 
 	private sendGameState(socket: any) {

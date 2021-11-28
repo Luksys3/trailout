@@ -29,11 +29,17 @@ class Game {
 
 	private playersCount = 0;
 	private countdown = 5;
+	private music: p5.SoundFile;
+	private crashSound: p5.SoundFile;
+	private musicStarted = false;
 
-	preload() {}
+	preload() {
+		this.crashSound = loadSound('assets/Crash.wav');
+	}
 
-	setup() {
-		this.socket = io('http://localhost:8443');
+	setup(music: p5.SoundFile) {
+		this.music = music;
+		this.socket = io('http://192.168.1.222:8443');
 
 		this.socket.on('game-state', (message: GameStateData) => {
 			switch (message.state) {
@@ -51,6 +57,11 @@ class Game {
 						this.walls = {};
 					}
 					break;
+			}
+
+			if (message.state === 'COUNTDOWN' && !this.musicStarted) {
+				this.musicStarted = true;
+				this.music.play();
 			}
 
 			this.state = message.state;
@@ -102,6 +113,11 @@ class Game {
 
 		this.socket.on('remove-wall', (message: { wallId: string }) => {
 			delete this.walls[message.wallId];
+		});
+
+		this.socket.on('player-dead', () => {
+			this.crashSound.setVolume(0.6);
+			this.crashSound.play();
 		});
 	}
 
@@ -180,7 +196,7 @@ class Game {
 	}
 
 	private useMePlayer(callback: (mePlayer: Player) => void) {
-		if (!this.socket.connected) {
+		if (!this.socket?.connected ?? true) {
 			return;
 		}
 

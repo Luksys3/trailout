@@ -6,4 +6,6 @@ export as namespace p5;
 
 declare global {
 	var io: any;
+	var loadSound: any;
+	var getAudioContext: any;
 }

@@ -9,7 +9,7 @@ app.set('port', SOCKETS_PORT);
 let http = require('http').Server(app);
 let io = require('socket.io')(http, {
 	cors: {
-		origin: 'http://localhost:3000'
+		origin: 'http://192.168.1.222:3000'
 	}
 });
 

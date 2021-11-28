@@ -1,9 +1,13 @@
 let game: Game;
 let gameMap: GameMap;
 let font: any;
+let music: p5.SoundFile;
+
+let connectPressed = false;
 
 function preload() {
 	font = loadFont('assets/PressStart2P-Regular.ttf');
+	music = loadSound('assets/8_Bit_Retro_Funk.mp3');
 
 	game = new Game();
 	game.preload();
@@ -16,22 +20,39 @@ function setup() {
 	textFont(font);
 	frameRate(60);
 	createCanvas(1216, 832);
+}
 
-	game.setup();
+function setupGame() {
+	game.setup(music);
 	gameMap.setup();
+
+	music.setLoop(true);
+	music.setVolume(0.6);
 }
 
 function draw() {
-	noSmooth();
+	if (connectPressed) {
+		noSmooth();
 
-	game.updatePlayers();
+		game.updatePlayers();
 
-	gameMap.drawBackground();
-	game.drawWalls();
-	game.drawPlayers();
-	gameMap.drawObjects();
+		gameMap.drawBackground();
+		game.drawWalls();
+		game.drawPlayers();
+		gameMap.drawObjects();
 
-	game.drawUi();
+		game.drawUi();
+	} else {
+		push();
+		background(255);
+		strokeWeight(0);
+		translate(width / 2, height / 2);
+		textAlign(CENTER);
+		color(0, 0, 0);
+		textSize(20);
+		text('[Connect]', 20, 0);
+		pop();
+	}
 }
 
 function keyPressed() {
@@ -40,4 +61,20 @@ function keyPressed() {
 
 function keyReleased() {
 	game.onKeyReleased(keyCode);
+}
+
+function mouseReleased() {
+	if (!connectPressed) {
+		const relativeMouseX = mouseX - width / 2;
+		const relativeMouseY = mouseY - height / 2;
+		if (
+			relativeMouseX >= -100 &&
+			relativeMouseX <= 100 &&
+			relativeMouseY >= -20 &&
+			relativeMouseY <= 20
+		) {
+			connectPressed = true;
+			setupGame();
+		}
+	}
 }
