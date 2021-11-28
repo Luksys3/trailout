@@ -602,7 +602,9 @@ class Player {
         }
     }
     putBlob() {
-        this.game.createWall(createVector(this.position.x, this.position.y).add(createVector(0, 30).rotate(this.angle)));
+        if (!this.dead) {
+            this.game.createWall(createVector(this.position.x, this.position.y).add(createVector(0, 30).rotate(this.angle)));
+        }
     }
     getCarStyleCoords() {
         return {
@@ -617,12 +619,15 @@ class Wall {
     constructor({ position }) {
         this.position = position;
         this.wallImage = loadImage('assets/Boulder.png');
+        this.angle = random(-PI, PI);
     }
     draw() {
         const width = 17 * 2;
-        const height = 14 * 2;
+        const height = 17 * 2;
         push();
-        image(this.wallImage, this.position.x - width / 2, this.position.y - height / 2, width, height);
+        translate(this.position.x, this.position.y);
+        rotate(this.angle);
+        image(this.wallImage, -width / 2, -height / 2, width, height);
         pop();
     }
 }

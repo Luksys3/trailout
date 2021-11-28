@@ -191,11 +191,13 @@ class Player {
 	}
 
 	private putBlob() {
-		this.game.createWall(
-			createVector(this.position.x, this.position.y).add(
-				createVector(0, 30).rotate(this.angle)
-			)
-		);
+		if (!this.dead) {
+			this.game.createWall(
+				createVector(this.position.x, this.position.y).add(
+					createVector(0, 30).rotate(this.angle)
+				)
+			);
+		}
 	}
 
 	private getCarStyleCoords(): [number, number] {

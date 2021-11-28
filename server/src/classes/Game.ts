@@ -120,8 +120,15 @@ export class Game {
 		});
 
 		setInterval(() => {
-			if (this.players.length <= 1) {
+			if (this.state !== 'WAITING_FOR_PLAYERS' && this.players.length <= 1) {
 				this.state = 'WAITING_FOR_PLAYERS';
+
+				this.players = this.players.map(player => {
+					player.reset();
+					return player;
+				});
+				this.walls = {};
+
 				this.sendGameState(this.io);
 
 				clearTimeout(this.countdownTimeout);
