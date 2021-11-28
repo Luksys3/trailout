@@ -1,6 +1,9 @@
 # Trailout
 Destroy your opponent's car!
 
+![image](https://user-images.githubusercontent.com/22772195/143774133-97f33363-03fe-46fd-b307-1a6cb0ed3e8c.png)
+
+
 Created during 48 hours coding jam.
 
 ### Controls
