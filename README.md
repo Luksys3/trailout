@@ -1,5 +1,5 @@
 # Trailout
-Destroy your opponent's car!
+Multiplayer car game with mission to destroy your opponents.
 
 ![image](https://user-images.githubusercontent.com/22772195/143774133-97f33363-03fe-46fd-b307-1a6cb0ed3e8c.png)
 
