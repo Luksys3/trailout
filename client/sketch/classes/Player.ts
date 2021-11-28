@@ -17,6 +17,7 @@ class Player {
 	private turnLeft = false;
 
 	private carsImage: p5.Image;
+	private fireImage: p5.Image;
 	private carStyle: 0 | 1 | 2 | 3;
 
 	private width = 22;
@@ -51,6 +52,7 @@ class Player {
 
 	preload() {
 		this.carsImage = loadImage('assets/Cars.png');
+		this.fireImage = loadImage('assets/Fire_Spreadsheet.png');
 	}
 
 	updateFromServer(data: ServerPlayer) {
@@ -118,8 +120,56 @@ class Player {
 			11,
 			19
 		);
-
 		pop();
+
+		if (this.dead) {
+			push();
+			translate(this.position.x, this.position.y);
+			const fireWidth = (256 / 32) * 2;
+			const fireHeight = (352 / 32) * 2;
+
+			const coords2 = [
+				[0, 0],
+				[512, 0],
+				[0, 512],
+				[512, 512]
+			][Math.floor((millis() % 1000) / 250)];
+
+			image(
+				this.fireImage,
+				-fireWidth / 2 - 8,
+				-fireHeight / 2,
+				fireWidth,
+				fireHeight,
+				128 + coords2[0],
+				64 + coords2[0],
+				256,
+				352
+			);
+			image(
+				this.fireImage,
+				-fireWidth / 2 + 6,
+				-fireHeight / 2 + 8,
+				fireWidth,
+				fireHeight,
+				128 + coords2[0],
+				64 + coords2[0],
+				256,
+				352
+			);
+			image(
+				this.fireImage,
+				-fireWidth / 2 + 4,
+				-fireHeight / 2 - 6,
+				fireWidth,
+				fireHeight,
+				128 + coords2[0],
+				64 + coords2[0],
+				256,
+				352
+			);
+			pop();
+		}
 	}
 
 	onKeyPressed(keyCode: number) {

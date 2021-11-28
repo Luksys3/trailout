@@ -46,8 +46,10 @@ class Game {
 				case 'COUNTDOWN':
 				case 'ENDED':
 					this.countdown = message.countdown;
-					this.players = {};
-					this.walls = {};
+					if (this.countdown <= 2) {
+						this.players = {};
+						this.walls = {};
+					}
 					break;
 			}
 
@@ -137,10 +139,19 @@ class Game {
 	}
 
 	drawUi() {
+		if (this.state !== 'STARTED') {
+			push();
+			strokeWeight(0);
+			fill(255, 255, 255, 100);
+			rect(0, 0, 1216, 832);
+			pop();
+		}
+
 		push();
-		textSize(26);
+		textSize(20);
+		textAlign(CENTER);
 		if (this.state === 'WAITING_FOR_PLAYERS') {
-			text(`Connected players: ${this.playersCount}`, width / 2, height / 2);
+			text('Waiting for more players', width / 2, height / 2);
 		}
 
 		if (this.state === 'COUNTDOWN') {

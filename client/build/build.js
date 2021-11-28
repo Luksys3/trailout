@@ -1,12 +1,15 @@
 let game;
 let gameMap;
+let font;
 function preload() {
+    font = loadFont('assets/PressStart2P-Regular.ttf');
     game = new Game();
     game.preload();
     gameMap = new GameMap();
     gameMap.preload();
 }
 function setup() {
+    textFont(font);
     frameRate(60);
     createCanvas(1216, 832);
     game.setup();
@@ -20,7 +23,6 @@ function draw() {
     game.drawPlayers();
     gameMap.drawObjects();
     game.drawUi();
-    text(Math.round(frameRate()), 10, 10);
 }
 function keyPressed() {
     game.onKeyPressed(keyCode);
@@ -49,8 +51,10 @@ class Game {
                 case 'COUNTDOWN':
                 case 'ENDED':
                     this.countdown = message.countdown;
-                    this.players = {};
-                    this.walls = {};
+                    if (this.countdown <= 2) {
+                        this.players = {};
+                        this.walls = {};
+                    }
                     break;
             }
             this.state = message.state;
@@ -116,10 +120,18 @@ class Game {
         });
     }
     drawUi() {
+        if (this.state !== 'STARTED') {
+            push();
+            strokeWeight(0);
+            fill(255, 255, 255, 100);
+            rect(0, 0, 1216, 832);
+            pop();
+        }
         push();
-        textSize(26);
+        textSize(20);
+        textAlign(CENTER);
         if (this.state === 'WAITING_FOR_PLAYERS') {
-            text(`Connected players: ${this.playersCount}`, width / 2, height / 2);
+            text('Waiting for more players', width / 2, height / 2);
         }
         if (this.state === 'COUNTDOWN') {
             text(`Game starts in ${this.countdown}!`, width / 2, height / 2);
@@ -422,6 +434,7 @@ class Player {
     }
     preload() {
         this.carsImage = loadImage('assets/Cars.png');
+        this.fireImage = loadImage('assets/Fire_Spreadsheet.png');
     }
     updateFromServer(data) {
         this.position = createVector(data.position.x, data.position.y);
@@ -473,6 +486,22 @@ class Player {
         const coords = this.getCarStyleCoords();
         image(this.carsImage, -this.width / 2, -this.height / 2, this.width, this.height, coords[0], coords[1], 11, 19);
         pop();
+        if (this.dead) {
+            push();
+            translate(this.position.x, this.position.y);
+            const fireWidth = (256 / 32) * 2;
+            const fireHeight = (352 / 32) * 2;
+            const coords2 = [
+                [0, 0],
+                [512, 0],
+                [0, 512],
+                [512, 512]
+            ][Math.floor((millis() % 1000) / 250)];
+            image(this.fireImage, -fireWidth / 2 - 8, -fireHeight / 2, fireWidth, fireHeight, 128 + coords2[0], 64 + coords2[0], 256, 352);
+            image(this.fireImage, -fireWidth / 2 + 6, -fireHeight / 2 + 8, fireWidth, fireHeight, 128 + coords2[0], 64 + coords2[0], 256, 352);
+            image(this.fireImage, -fireWidth / 2 + 4, -fireHeight / 2 - 6, fireWidth, fireHeight, 128 + coords2[0], 64 + coords2[0], 256, 352);
+            pop();
+        }
     }
     onKeyPressed(keyCode) {
         if (keyCode === LEFT_ARROW) {
@@ -508,11 +537,13 @@ class Player {
 class Wall {
     constructor({ position }) {
         this.position = position;
+        this.wallImage = loadImage('assets/Boulder.png');
     }
     draw() {
+        const width = 17 * 2;
+        const height = 14 * 2;
         push();
-        color(240, 240, 240);
-        circle(this.position.x, this.position.y, 20);
+        image(this.wallImage, this.position.x - width / 2, this.position.y - height / 2, width, height);
         pop();
     }
 }

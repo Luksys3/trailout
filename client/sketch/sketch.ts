@@ -1,7 +1,10 @@
 let game: Game;
 let gameMap: GameMap;
+let font: any;
 
 function preload() {
+	font = loadFont('assets/PressStart2P-Regular.ttf');
+
 	game = new Game();
 	game.preload();
 
@@ -10,6 +13,7 @@ function preload() {
 }
 
 function setup() {
+	textFont(font);
 	frameRate(60);
 	createCanvas(1216, 832);
 
@@ -28,8 +32,6 @@ function draw() {
 	gameMap.drawObjects();
 
 	game.drawUi();
-
-	text(Math.round(frameRate()), 10, 10);
 }
 
 function keyPressed() {

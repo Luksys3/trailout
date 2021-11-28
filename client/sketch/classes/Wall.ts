@@ -1,14 +1,25 @@
 class Wall {
 	private position: p5.Vector;
+	private wallImage: p5.Image;
 
 	constructor({ position }: { position: p5.Vector }) {
 		this.position = position;
+
+		this.wallImage = loadImage('assets/Boulder.png');
 	}
 
 	draw() {
+		const width = 17 * 2;
+		const height = 14 * 2;
+
 		push();
-		color(240, 240, 240);
-		circle(this.position.x, this.position.y, 20);
+		image(
+			this.wallImage,
+			this.position.x - width / 2,
+			this.position.y - height / 2,
+			width,
+			height
+		);
 		pop();
 	}
 }

@@ -37,7 +37,10 @@ export class Game {
 			this.sendGameState(socket);
 
 			socket.on('player-update', (message: PlayerDataInterface) => {
-				if (this.state === 'STARTED') {
+				if (
+					this.state === 'STARTED' ||
+					(this.state === 'ENDED' && this.countdown > 2)
+				) {
 					this.players.forEach(player => {
 						if (player.id === socket.id && !player.dead) {
 							player.updateFromClient(message);
@@ -81,7 +84,10 @@ export class Game {
 		});
 
 		setInterval(() => {
-			if (this.state === 'STARTED') {
+			if (
+				this.state === 'STARTED' ||
+				(this.state === 'ENDED' && this.countdown > 2)
+			) {
 				this.io.emit('players', {
 					players: this.players.map(player => player.toJson())
 				});
@@ -92,15 +98,28 @@ export class Game {
 					}
 
 					if (
-						player.position.x <= 0 ||
-						player.position.y <= 0 ||
-						player.position.x >= canvasWidth ||
-						player.position.y >= canvasHeight
+						player.position.x <= 16 ||
+						player.position.y <= 16 ||
+						player.position.x >= canvasWidth - 16 ||
+						player.position.y >= canvasHeight - 16
 					) {
 						player.setDead();
 						this.io.emit('player-dead', { playerId: player.id });
 						return;
 					}
+
+					Object.values(this.players).forEach(({ id, position: p }) => {
+						if (id === player.id) {
+							return;
+						}
+
+						const a = p.x - player.position.x;
+						const b = p.y - player.position.y;
+						if (Math.sqrt(a * a + b * b) < 20) {
+							player.setDead();
+							this.io.emit('player-dead', { playerId: player.id });
+						}
+					});
 
 					Object.values(this.walls).forEach(({ position: p }) => {
 						const a = p.x - player.position.x;
@@ -112,31 +131,41 @@ export class Game {
 					});
 				});
 
-				const aliveCount = this.players.reduce(
-					(previous, player) => (player.dead ? previous : previous + 1),
-					0
-				);
-				if (aliveCount <= 1) {
-					this.state = 'ENDED';
-					this.countdown = 5;
-					this.sendGameState(this.io);
+				if (this.state === 'STARTED') {
+					const aliveCount = this.players.reduce(
+						(previous, player) => (player.dead ? previous : previous + 1),
+						0
+					);
+					if (aliveCount <= 1) {
+						this.io.emit('players', {
+							players: this.players.map(player => player.toJson())
+						});
 
-					this.players = this.players.map(player => {
-						player.reset();
-						return player;
-					});
-					this.walls = {};
-
-					const interval = setInterval(() => {
-						this.countdown -= 1;
-
-						if (this.countdown <= 0) {
-							clearInterval(interval);
-							this.state = 'STARTED';
-						}
-
+						this.state = 'ENDED';
+						this.countdown = 5;
 						this.sendGameState(this.io);
-					}, 1000);
+
+						const interval = setInterval(() => {
+							this.countdown -= 1;
+
+							if (this.countdown <= 0) {
+								this.players = this.players.map(player => {
+									player.reset();
+									return player;
+								});
+								this.walls = {};
+
+								this.io.emit('players', {
+									players: this.players.map(player => player.toJson())
+								});
+
+								clearInterval(interval);
+								this.state = 'STARTED';
+							}
+
+							this.sendGameState(this.io);
+						}, 1000);
+					}
 				}
 			}
 		}, 1000 / 30);
